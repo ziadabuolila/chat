@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function Contact() { return <main className="legal-page" dir="rtl"><Link className="brand" href="/"><span className="brand-mark">ص</span> صارح<span className="brand-dot">.</span></Link><article><span className="eyebrow">يسعدنا سماعك</span><h1>تواصل معنا</h1><p>للدعم أو الإبلاغ عن مشكلة، راسل فريق الخدمة عبر البريد الذي يضبطه مالك المشروع في إعدادات النشر.</p><p>لم يُضبط عنوان دعم عام لهذا المشروع بعد.</p><Link href="/help">الأسئلة الشائعة ←</Link></article></main>; }
