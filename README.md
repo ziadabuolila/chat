@@ -5,7 +5,7 @@
 ## Supabase والإعداد المحلي
 
 1. أنشئ مشروع Supabase جديدًا.
-2. لمشروع جديد: شغّل `supabase/schema.sql` مرة واحدة. لمشروعك الحالي الذي شغّلت عليه المخطط الأول: شغّل فقط `supabase/migrations/20261103010000_private_conversations.sql` من SQL Editor؛ لا تعِد تشغيل المخطط الأول.
+2. لمشروع جديد: شغّل `supabase/schema.sql` مرة واحدة. لمشروعك الحالي: شغّل `supabase/migrations/20261103010000_private_conversations.sql` إذا لم تكن قد شغّلته، ثم شغّل `supabase/migrations/20261104000000_save_signup_profile_data.sql` لحفظ الاسم ورقم الهاتف في الملف الشخصي؛ لا تعِد تشغيل المخطط الأول.
    إذا كان جدول `profiles` فارغًا رغم وجود مستخدمين في Auth، شغّل `supabase/repair_missing_profiles.sql` مرة واحدة لإصلاح الحسابات الموجودة وإعادة تثبيت trigger الملفات الشخصية.
 3. انسخ `.env.example` إلى `.env.local` واملأ القيم. لا تضع مفتاح الخدمة في متغير يبدأ بـ `NEXT_PUBLIC_`.
 4. في Supabase Auth → URL Configuration، اضبط Site URL وأضف `http://localhost:3000/auth/callback` و`http://localhost:3000/reset-password` وعناوين النطاق الإنتاجي إلى Redirect URLs.

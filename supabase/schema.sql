@@ -8,6 +8,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text not null unique check (username ~ '^[a-z0-9_]{3,24}$'),
   display_name text check (display_name is null or char_length(display_name) <= 50),
+  phone text,
   bio text check (bio is null or char_length(bio) <= 240),
   avatar_url text,
   accepts_messages boolean not null default true,
@@ -116,9 +117,23 @@ create table if not exists private.message_rate_limits (
 
 create or replace function public.create_profile_for_user()
 returns trigger language plpgsql security definer set search_path = '' as $$
+declare
+  v_username text;
 begin
-  insert into public.profiles (id, username, display_name)
-  values (new.id, lower(coalesce(new.raw_user_meta_data ->> 'username', 'user_' || substr(new.id::text, 1, 8))), nullif(btrim(new.raw_user_meta_data ->> 'full_name'), ''));
+  v_username := lower(coalesce(new.raw_user_meta_data ->> 'username', ''));
+  if v_username !~ '^[a-z0-9_]{3,24}$' or exists (
+    select 1 from public.profiles p where p.username = v_username and p.id <> new.id
+  ) then
+    v_username := 'user_' || substr(replace(new.id::text, '-', ''), 1, 16);
+  end if;
+
+  insert into public.profiles (id, username, display_name, phone)
+  values (
+    new.id,
+    v_username,
+    nullif(btrim(new.raw_user_meta_data ->> 'full_name'), ''),
+    nullif(btrim(new.raw_user_meta_data ->> 'phone'), '')
+  );
   return new;
 end;
 $$;
