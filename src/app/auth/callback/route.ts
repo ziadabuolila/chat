@@ -5,7 +5,9 @@ import { getSupabasePublishableKey } from "@/lib/supabase/keys";
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   if (code) {
-    const response = NextResponse.redirect(new URL("/dashboard", request.url));
+    const next = request.nextUrl.searchParams.get("next");
+    const redirectPath = next?.startsWith("/") && !next.startsWith("//") && !next.includes("\\") ? next : "/dashboard";
+    const response = NextResponse.redirect(new URL(redirectPath, request.url));
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       getSupabasePublishableKey(),

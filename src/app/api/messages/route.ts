@@ -2,6 +2,7 @@ import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseSecretKey } from "@/lib/supabase/keys";
+import { createClient as createSessionClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   const origin = request.headers.get("origin");
@@ -19,6 +20,9 @@ export async function POST(request: NextRequest) {
   if (!url || !serviceKey || !hashSecret) {
     return NextResponse.json({ error: "لم تكتمل إعدادات الخادم لإرسال الرسائل." }, { status: 503 });
   }
+  const sessionClient = await createSessionClient();
+  const { data: { user } } = await sessionClient.auth.getUser();
+  if (!user) return NextResponse.json({ error: "سجّل الدخول أولًا لإرسال رسالة." }, { status: 401 });
 
   let username = "", body = "", captchaToken = "", image: File | null = null;
   try {

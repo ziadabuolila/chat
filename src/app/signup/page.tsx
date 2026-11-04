@@ -1,2 +1,7 @@
 import { AuthForm } from "@/app/(auth)/auth-form";
-export default function Signup() { return <AuthForm mode="signup"/>; }
+export const instant = false;
+
+export default async function Signup({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+	const { next } = await searchParams;
+	return <AuthForm mode="signup" redirectTo={next}/>;
+}

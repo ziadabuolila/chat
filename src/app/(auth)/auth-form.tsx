@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { hasSupabasePublicConfig } from "@/lib/supabase/keys";
 
-export function AuthForm({ mode }: { mode: "login" | "signup" }) {
+export function AuthForm({ mode, redirectTo }: { mode: "login" | "signup"; redirectTo?: string }) {
   const [error, setError] = useState(""); const [notice, setNotice] = useState(""); const [busy, setBusy] = useState(false); const router = useRouter();
   const signup = mode === "signup";
+  const targetPath = redirectTo?.startsWith("/") && !redirectTo.startsWith("//") && !redirectTo.includes("\\") ? redirectTo : "/dashboard";
+  const nextQuery = targetPath === "/dashboard" ? "" : `?next=${encodeURIComponent(targetPath)}`;
   async function submit(formData: FormData) {
     setBusy(true); setError(""); setNotice("");
     if (!hasSupabasePublicConfig()) { setError("أضف إعدادات Supabase إلى .env.local أولًا، ثم أعد تشغيل التطبيق."); setBusy(false); return; }
@@ -18,20 +20,20 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       if (!phone) { setError("رقم الهاتف مطلوب."); setBusy(false); return; }
       if (password.length < 8) { setError("كلمة المرور يجب ألا تقل عن 8 أحرف."); setBusy(false); return; }
       const supabase = createClient();
-      const { data, error: authError } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/auth/callback`, data: { full_name: fullName, phone } } });
+      const { data, error: authError } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(targetPath)}`, data: { full_name: fullName, phone } } });
       if (authError) {
         setError(authError.code === "over_email_send_rate_limit"
           ? "وصل المشروع إلى حد رسائل التأكيد في Supabase. لو أكدت بريدك قبل كده، سجّل الدخول بدل إنشاء حساب جديد. وإلا انتظر حتى يتجدد الحد أو اضبط SMTP مخصصًا."
           : authError.message);
         setBusy(false); return;
       }
-      if (data.session) router.push("/dashboard"); else setNotice("تم إنشاء حسابك. تحقق من بريدك الإلكتروني لتأكيد الحساب ثم سجّل الدخول.");
+      if (data.session) router.push(targetPath); else setNotice("تم إنشاء حسابك. تحقق من بريدك الإلكتروني لتأكيد الحساب ثم سجّل الدخول.");
     } else {
       const { error: authError } = await createClient().auth.signInWithPassword({ email, password });
-      if (authError) setError("البريد الإلكتروني أو كلمة المرور غير صحيحة."); else router.push("/dashboard");
+      if (authError) setError("البريد الإلكتروني أو كلمة المرور غير صحيحة."); else router.push(targetPath);
     }
     router.refresh(); setBusy(false);
   }
   return <main className="auth-page" dir="rtl"><Link className="brand auth-brand" href="/"><span className="brand-mark">ص</span> صارح<span className="brand-dot">.</span></Link><div className="auth-card"><Link className="back-link" href="/">← الرئيسية</Link><div className="auth-icon">{signup ? "✳" : "↗"}</div><span className="eyebrow">{signup ? "ابدأ رحلتك" : "مرحبًا بعودتك"}</span><h1>{signup ? "أنشئ مساحتك" : "سجّل دخولك"}</h1><p className="auth-intro">{signup ? "خطوة بسيطة تفصلك عن استقبال كلام من القلب." : "مساحتك ورسائلك بانتظارك."}</p>
-  <form action={submit} className="auth-form">{signup && <><label>الاسم الكامل<input name="fullName" autoComplete="name" required minLength={2} placeholder="اسمك الكامل"/></label><label>رقم الهاتف<input name="phone" type="tel" autoComplete="tel" required placeholder="+20 10..."/><small>ادخل رقمك لارسال عليه كود التحقق</small></label></>}<label>البريد الإلكتروني<input name="email" type="email" autoComplete="email" required placeholder="you@example.com"/></label><label>كلمة المرور<input name="password" type="password" autoComplete={signup ? "new-password" : "current-password"} required minLength={8} placeholder="8 أحرف على الأقل"/></label>{!signup&&<p className="form-hint"><Link href="/forgot-password">نسيت كلمة المرور؟</Link></p>}{signup && <p className="form-hint">بالتسجيل، أنت توافق على <Link href="/terms">شروط الاستخدام</Link> و<Link href="/privacy">سياسة الخصوصية</Link>.</p>}{error && <p className="form-error" role="alert">{error}</p>}{notice && <p className="form-success">{notice}</p>}<button className="button auth-submit" disabled={busy}>{busy ? "لحظة من فضلك..." : signup ? "إنشاء الحساب ←" : "دخول إلى حسابي ←"}</button></form><div className="auth-switch">{signup ? <>عندك حساب؟ <Link href="/login">سجّل دخولك</Link></> : <>جديد هنا؟ <Link href="/signup">أنشئ حسابك</Link></>}</div></div><small className="auth-foot">مساحتك الآمنة للتعبير بصراحة</small></main>;
+  <form action={submit} className="auth-form">{signup && <><label>الاسم الكامل<input name="fullName" autoComplete="name" required minLength={2} placeholder="اسمك الكامل"/></label><label>رقم الهاتف<input name="phone" type="tel" autoComplete="tel" required placeholder="+20 10..."/><small>ادخل رقمك لارسال عليه كود التحقق</small></label></>}<label>البريد الإلكتروني<input name="email" type="email" autoComplete="email" required placeholder="you@example.com"/></label><label>كلمة المرور<input name="password" type="password" autoComplete={signup ? "new-password" : "current-password"} required minLength={8} placeholder="8 أحرف على الأقل"/></label>{!signup&&<p className="form-hint"><Link href="/forgot-password">نسيت كلمة المرور؟</Link></p>}{signup && <p className="form-hint">بالتسجيل، أنت توافق على <Link href="/terms">شروط الاستخدام</Link> و<Link href="/privacy">سياسة الخصوصية</Link>.</p>}{error && <p className="form-error" role="alert">{error}</p>}{notice && <p className="form-success">{notice}</p>}<button className="button auth-submit" disabled={busy}>{busy ? "لحظة من فضلك..." : signup ? "إنشاء الحساب ←" : "دخول إلى حسابي ←"}</button></form><div className="auth-switch">{signup ? <>عندك حساب؟ <Link href={`/login${nextQuery}`}>سجّل دخولك</Link></> : <>جديد هنا؟ <Link href={`/signup${nextQuery}`}>أنشئ حسابك</Link></>}</div></div><small className="auth-foot">مساحتك الآمنة للتعبير بصراحة</small></main>;
 }
